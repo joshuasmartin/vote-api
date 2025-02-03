@@ -1,0 +1,317 @@
+@page "/Subjects/{ShortName}"
+
+@rendermode InteractiveServer
+
+<PageTitle>@_title</PageTitle>
+
+@using Microsoft.EntityFrameworkCore
+@using VoteWithYourWallet.Common.Models
+
+@inject IJSRuntime JsRuntime
+@inject NotificationService NotificationService
+@inject IDbContextFactory<PrimaryContext> DbFactory
+
+<RadzenLayout>
+    <RadzenBody class="mt-xs-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-12">
+                    <a href="/" class="vwyw-logo-link">
+                        <img src="vwyw-logo-horizontal-one.png" class="img-fluid" alt="Vote With Your Wallet"/>
+                    </a>
+                </div>
+            </div>
+            
+            @if (_subject != null)
+            {
+                <div class="card p-md-3 mt-3 mb-3">
+                    <div class="card-body">
+
+                        <div class="d-flex flex-wrap justify-content-start mb-3 d-none d-md-inline-flex">
+                            <button type="button" class="btn btn-lg btn-outline-dark d-flex align-items-center" @onclick="GoBack">
+                                <RadzenIcon Icon="arrow_back"/>
+                                Back
+                            </button>
+                        </div>
+
+                        <div class="d-flex flex-wrap justify-content-start mb-3 d-md-none">
+                            <button type="button" class="btn btn-sm btn-outline-dark d-flex align-items-center" @onclick="GoBack">
+                                <RadzenIcon Icon="arrow_back"/>
+                                Back
+                            </button>
+                        </div>
+                        
+                        <RadzenProgressBarCircular ProgressBarStyle="ProgressBarStyle.Secondary" Visible="_loading" Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+
+                        @if (!_loading)
+                        {
+                            <h2 class="mb-3">Scores for @_subject.Name</h2>
+
+                            <div class="row">
+                                <div class="col-12 d-flex flex-wrap align-content-center">
+                                    <div class="d-flex align-content-center" style="margin-right: 1rem;">
+                                        <RadzenIcon Icon="@(Retailers.IconForScore(_subject.DiversityScore))" IconColor="@(Retailers.ColorForScore(_subject.DiversityScore))" />
+                                        <span>DEI</span>
+                                    </div>
+                                    <div class="d-flex align-content-center" style="margin-right: 1rem;">
+                                        <RadzenIcon Icon="@(Retailers.IconForScore(_subject.EnvironmentalScore))" IconColor="@(Retailers.ColorForScore(_subject.EnvironmentalScore))" />
+                                        <span>Environment</span>
+                                    </div>
+                                    <div class="d-flex align-content-center" style="margin-right: 1rem;">
+                                        <RadzenIcon Icon="@(Retailers.IconForScore(_subject.UnionScore))" IconColor="@(Retailers.ColorForScore(_subject.UnionScore))" />
+                                        <span>Unions</span>
+                                    </div>
+                                    <div class="d-flex align-content-center">
+                                        <RadzenIcon Icon="@(Retailers.IconForScore(_subject.LobbyingScore))" IconColor="@(Retailers.ColorForScore(_subject.LobbyingScore))" />
+                                        <span>Politics</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <hr class="mt-4 mb-4" />
+                            
+                            <p>
+                                <a href="@($"Subjects/{ShortName}/Scores/Add")" class="btn btn-outline-dark d-flex d-inline-flex align-items-center">
+                                    <RadzenIcon Icon="add" />
+                                    Suggest a Score
+                                </a>
+                            </p>
+                            
+                            <h4>Diversity, Equity, and Inclusion</h4>
+                            <ul class="list-unstyled mt-1">
+                                @if (_diversityScores.Count == 0)
+                                {
+                                    <li>There are no reports on this topic, please help us by suggesting a score above.</li>
+                                }
+                                
+                                @foreach (var score in _diversityScores)
+                                {
+                                    <li class="mt-3">
+                                        <p class="mt-0 mb-0">
+                                            @switch (score.Number)
+                                            {
+                                                case 1:
+                                                    <strong style="color: red;">NEGATIVE SCORE</strong>
+                                                    <i>@score.Headline</i>
+                                                    break;
+                                                case 3:
+                                                    <strong style="color: green;">POSITIVE SCORE</strong>
+                                                    <i>@score.Headline</i>
+                                                    break;
+                                                default:
+                                                    <strong style="color: gray;">NEUTRAL SCORE</strong>
+                                                    <i>@score.Headline</i>
+                                                    break;
+                                            }
+                                        </p>
+                                        <p class="mt-0 mb-0 text-muted" style="font-size: .8rem;"><a href="@(score.SourceUrl)">View Source</a> reported by @(score.CreatedByUser!.Name) at @(score.CreatedAt.ToString("MMM d, yyyy h:mm tt"))</p>
+                                    </li>
+                                }
+                            </ul>
+
+                            <h4 class="mt-4">Environmental Stewardship and Responsibility</h4>
+                            <ul class="list-unstyled mt-1">
+                                @if (_environmentalScores.Count == 0)
+                                {
+                                    <li>There are no reports on this topic, please help us by suggesting a score above.</li>
+                                }
+                                
+                                @foreach (var score in _environmentalScores)
+                                {
+                                    <li class="mt-3">
+                                        <p class="mt-0 mb-0">
+                                            @switch (score.Number)
+                                            {
+                                                case 1:
+                                                    <strong style="color: red;">NEGATIVE SCORE</strong>
+                                                    <i>@score.Headline</i>
+                                                    break;
+                                                case 3:
+                                                    <strong style="color: green;">POSITIVE SCORE</strong>
+                                                    <i>@score.Headline</i>
+                                                    break;
+                                                default:
+                                                    <strong style="color: gray;">NEUTRAL SCORE</strong>
+                                                    <i>@score.Headline</i>
+                                                    break;
+                                            }
+                                        </p>
+                                        <p class="mt-0 mb-0 text-muted" style="font-size: .8rem;"><a href="@(score.SourceUrl)">View Source</a> reported by @(score.CreatedByUser!.Name) at @(score.CreatedAt.ToString("MMM d, yyyy h:mm tt"))</p>
+                                    </li>
+                                }
+                            </ul>
+                            
+                            <h4 class="mt-4">Unions and Labor Protections</h4>
+                            <ul class="list-unstyled mt-1">
+                                @if (_unionScores.Count == 0)
+                                {
+                                    <li>There are no reports on this topic, please help us by suggesting a score above.</li>
+                                }
+                                
+                                @foreach (var score in _unionScores)
+                                {
+                                    <li class="mt-3">
+                                        <p class="mt-0 mb-0">
+                                            @switch (score.Number)
+                                            {
+                                                case 1:
+                                                    <strong style="color: red;">NEGATIVE SCORE</strong>
+                                                    <i>@score.Headline</i>
+                                                    break;
+                                                case 3:
+                                                    <strong style="color: green;">POSITIVE SCORE</strong>
+                                                    <i>@score.Headline</i>
+                                                    break;
+                                                default:
+                                                    <strong style="color: gray;">NEUTRAL SCORE</strong>
+                                                    <i>@score.Headline</i>
+                                                    break;
+                                            }
+                                        </p>
+                                        <p class="mt-0 mb-0 text-muted" style="font-size: .8rem;"><a href="@(score.SourceUrl)">View Source</a> reported by @(score.CreatedByUser!.Name) at @(score.CreatedAt.ToString("MMM d, yyyy h:mm tt"))</p>
+                                    </li>
+                                }
+                            </ul>
+                            
+                            <h4 class="mt-4">Lobbying and Political Spending</h4>
+                            <ul class="list-unstyled mt-1">
+                                @if (_politicsScores.Count == 0)
+                                {
+                                    <li>There are no reports on this topic, please help us by suggesting a score above.</li>
+                                }
+                                
+                                @foreach (var score in _politicsScores)
+                                {
+                                    <li class="mt-3">
+                                        <p class="mt-0 mb-0">
+                                            @switch (score.Number)
+                                            {
+                                                case 1:
+                                                    <strong style="color: red;">NEGATIVE SCORE</strong>
+                                                    <i>@score.Headline</i>
+                                                    break;
+                                                case 3:
+                                                    <strong style="color: green;">POSITIVE SCORE</strong>
+                                                    <i>@score.Headline</i>
+                                                    break;
+                                                default:
+                                                    <strong style="color: gray;">NEUTRAL SCORE</strong>
+                                                    <i>@score.Headline</i>
+                                                    break;
+                                            }
+                                        </p>
+                                        <p class="mt-0 mb-0 text-muted" style="font-size: .8rem;"><a href="@(score.SourceUrl)">View Source</a> reported by @(score.CreatedByUser!.Name) at @(score.CreatedAt.ToString("MMM d, yyyy h:mm tt"))</p>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                </div>
+            }
+            
+            <footer>
+                <p>&copy; Copyright 2025, Joshua Shane Martin</p>
+            </footer>
+        </div>
+    </RadzenBody>
+</RadzenLayout>
+
+@code {
+    [Parameter]
+    public string? ShortName { get; set; }
+
+    private Subject? _subject = new();
+
+    private List<Score> _diversityScores = [];
+
+    private List<Score> _unionScores = [];
+
+    private List<Score> _environmentalScores = [];
+
+    private List<Score> _politicsScores = [];
+
+    private string _title = "Score Details - Vote With Your Wallet";
+    
+    private bool _loading = true;
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+        
+        try
+        {
+            _loading = true;
+            
+            StateHasChanged();
+        
+            await using var context = await DbFactory.CreateDbContextAsync();
+
+            _subject = await context.Subjects!
+                .FirstOrDefaultAsync(s => s.ShortName == ShortName);
+
+            if (_subject == null)
+            {
+                return;
+            }
+
+            _title = $"Scores for {_subject.Name} - Vote With Your Wallet";
+            
+            _diversityScores = await context.Scores!
+                .Include(s => s.CreatedByUser)
+                .Where(s => s.SubjectId == _subject.Id)
+                .Where(s => s.Topic == "Diversity")
+                .Where(s => s.IsApproved)
+                .ToListAsync();
+            
+            _unionScores = await context.Scores!
+                .Include(s => s.CreatedByUser)
+                .Where(s => s.SubjectId == _subject.Id)
+                .Where(s => s.Topic == "Unions")
+                .Where(s => s.IsApproved)
+                .ToListAsync();
+            
+            _environmentalScores = await context.Scores!
+                .Include(s => s.CreatedByUser)
+                .Where(s => s.SubjectId == _subject.Id)
+                .Where(s => s.Topic == "Environment")
+                .Where(s => s.IsApproved)
+                .ToListAsync();
+            
+            _politicsScores = await context.Scores!
+                .Include(s => s.CreatedByUser)
+                .Where(s => s.SubjectId == _subject.Id)
+                .Where(s => s.Topic == "Politics")
+                .Where(s => s.IsApproved)
+                .ToListAsync();
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+        
+            // Notify the user.
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Duration = 5000,
+                Summary = "Oops!",
+                Detail = $"Cannot load the data: {ex.Message}"
+            });
+        }
+        finally
+        {
+            _loading = false;
+            
+            StateHasChanged();
+        }
+    }
+
+    private async Task GoBack()
+    {
+        await JsRuntime.InvokeVoidAsync("history.back");
+    }
+}

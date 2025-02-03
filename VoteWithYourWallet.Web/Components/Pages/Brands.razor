@@ -1,0 +1,151 @@
+﻿@page "/Brands"
+
+@rendermode InteractiveServer
+
+<PageTitle>Look Up Brands - Vote With Your Wallet</PageTitle>
+
+@using VoteWithYourWallet.Common.Models
+@using VoteWithYourWallet.Web.Services
+
+@inject NotificationService NotificationService
+@inject ICacheService CacheService
+
+<RadzenLayout>
+    <RadzenBody class="mt-xs-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-12">
+                    <a href="/" class="vwyw-logo-link">
+                        <img src="vwyw-logo-horizontal-one.png" class="img-fluid" alt="Vote With Your Wallet"/>
+                    </a>
+                </div>
+            </div>
+
+            <div class="card p-md-3 mt-3 mb-3">
+                <div class="card-body">
+                    
+                    <div class="row">
+                        <div class="col-md-3">
+                            <ul class="list-group">
+                                <li class="list-group-item">
+                                    <a href="/Retailers" class="d-flex align-items-center" style="text-decoration: none; border-bottom: none;">
+                                        <RadzenIcon Icon="storefront"/>
+                                        Retailers
+                                    </a>
+                                </li>
+                                <li class="list-group-item active" aria-current="true">
+                                    <a href="/Brands" class="d-flex align-items-center" style="text-decoration: none; border-bottom: none;">
+                                        <RadzenIcon Icon="box"/>
+                                        Brands
+                                    </a>
+                                </li>
+                            </ul>
+
+                            <ul class="list-group mt-3">
+                                <li class="list-group-item">
+                                    <a href="/Subjects/Add" class="d-flex align-items-center" style="text-decoration: none; border-bottom: none;">
+                                        <RadzenIcon Icon="add"/>
+                                        Suggest
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="col-md-9 col-xs-12">
+                            <RadzenProgressBarCircular ProgressBarStyle="ProgressBarStyle.Secondary" Visible="_loading" Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" class="mt-3 mt-md-0" />
+
+                            <ul class="list-group mt-3 mt-md-0">
+                                @foreach (var subject in _subjects)
+                                {
+                                    <li class="list-group-item vwyw-list-group-item">
+                                        <a href="@($"Subjects/{subject.ShortName}")">
+                                            <div class="row d-flex align-content-center">
+                                                <h3>@subject.Name</h3>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-12 d-flex flex-wrap align-content-center">
+                                                    <div class="d-flex align-content-center" style="margin-right: 1rem;">
+                                                        <RadzenIcon Icon="@(Retailers.IconForScore(subject.DiversityScore))" IconColor="@(Retailers.ColorForScore(subject.DiversityScore))"/>
+                                                        <span>DEI</span>
+                                                    </div>
+                                                    <div class="d-flex align-content-center" style="margin-right: 1rem;">
+                                                        <RadzenIcon Icon="@(Retailers.IconForScore(subject.EnvironmentalScore))" IconColor="@(Retailers.ColorForScore(subject.EnvironmentalScore))"/>
+                                                        <span>Environment</span>
+                                                    </div>
+                                                    <div class="d-flex align-content-center" style="margin-right: 1rem;">
+                                                        <RadzenIcon Icon="@(Retailers.IconForScore(subject.UnionScore))" IconColor="@(Retailers.ColorForScore(subject.UnionScore))"/>
+                                                        <span>Unions</span>
+                                                    </div>
+                                                    <div class="d-flex align-content-center">
+                                                        <RadzenIcon Icon="@(Retailers.IconForScore(subject.LobbyingScore))" IconColor="@(Retailers.ColorForScore(subject.LobbyingScore))"/>
+                                                        <span>Politics</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <footer>
+                <p>&copy; Copyright 2025, Joshua Shane Martin</p>
+            </footer>
+        </div>
+    </RadzenBody>
+</RadzenLayout>
+
+@code {
+    [CascadingParameter]
+    public EventCallback SignOutClicked { get; set; }
+
+    private IEnumerable<Subject> _subjects = new List<Subject>();
+
+    private bool _loading = true;
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+        
+        if (_subjects.Any())
+        {
+            return;
+        }
+        
+        try
+        {
+            _loading = true;
+            
+            StateHasChanged();
+        
+            _subjects = await CacheService.GetBrandsAsync();
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+        
+            // Notify the user.
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Duration = 5000,
+                Summary = "Oops!",
+                Detail = $"Cannot load the data: {ex.Message}"
+            });
+        }
+        finally
+        {
+            _loading = false;
+            
+            StateHasChanged();
+        }
+    }
+}

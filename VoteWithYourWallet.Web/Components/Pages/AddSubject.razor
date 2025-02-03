@@ -1,0 +1,214 @@
+@page "/Subjects/Add"
+
+@rendermode InteractiveServer
+
+<PageTitle>Suggest a Retailer or Brand - Vote With Your Wallet</PageTitle>
+
+@using Azure
+@using Azure.Data.Tables
+@using BlazorCaptcha
+
+@inject IJSRuntime JsRuntime
+@inject IConfiguration Configuration
+@inject NotificationService NotificationService
+
+<RadzenLayout>
+    <RadzenBody class="mt-xs-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-12">
+                    <a href="/" class="vwyw-logo-link">
+                        <img src="vwyw-logo-horizontal-one.png" class="img-fluid" alt="Vote With Your Wallet"/>
+                    </a>
+                </div>
+            </div>
+
+            <div class="card p-md-3 mt-3 mb-3">
+                <div class="card-body">
+                    
+                    <div class="row">
+                        <div class="col-md-3">
+                            <ul class="list-group">
+                                <li class="list-group-item">
+                                    <a href="/Retailers" class="d-flex align-items-center" style="text-decoration: none; border-bottom: none;">
+                                        <RadzenIcon Icon="storefront"/>
+                                        Retailers
+                                    </a>
+                                </li>
+                                <li class="list-group-item">
+                                    <a href="/Brands" class="d-flex align-items-center" style="text-decoration: none; border-bottom: none;">
+                                        <RadzenIcon Icon="box"/>
+                                        Brands
+                                    </a>
+                                </li>
+                            </ul>
+
+                            <ul class="list-group mt-3">
+                                <li class="list-group-item active" aria-current="true">
+                                    <a href="/Subjects/Add" class="d-flex align-items-center" style="text-decoration: none; border-bottom: none;">
+                                        <RadzenIcon Icon="add"/>
+                                        Suggest
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="col-md-9 col-xs-12">
+                            <RadzenStack>
+                                <RadzenRadioButtonList @bind-Value="@_subjectType" TValue="int" class="mt-3" Disabled="_working">
+                                    <Items>
+                                        <RadzenRadioButtonListItem Text="Retailer" Value="1" />
+                                        <RadzenRadioButtonListItem Text="Brand" Value="2" />
+                                    </Items>
+                                </RadzenRadioButtonList>
+
+                                <RadzenFormField Text="Name of the Retailer or Brand">
+                                    <RadzenTextBox @bind-Value="@_subjectName" id="textSubjectName" Disabled="_working" />
+                                </RadzenFormField>
+
+                                <hr />
+
+                                <RadzenFormField Text="Your Name">
+                                    <RadzenTextBox @bind-Value="@_userName" Disabled="_working" />
+                                </RadzenFormField>
+
+                                <RadzenFormField Text="Email Address">
+                                    <RadzenTextBox @bind-Value="@_emailAddress" Disabled="_working" />
+                                </RadzenFormField>
+
+                                <hr />
+                                
+                                <Captcha @bind-CaptchaWord="@_captcha" CharNumber="@CaptchaLetters" Height="80" Width="260" />
+
+                                <RadzenFormField Text="Verify the Characters Above">
+                                    <RadzenTextBox @bind-Value="@_captchaVerification" Disabled="_working" />
+                                </RadzenFormField>
+
+                                <hr />
+
+                                <div class="mt-3">
+                                    <button type="button" class="btn btn-lg btn-outline-dark" @onclick="Save" disabled="@_working">Continue</button>
+                                    <RadzenProgressBarCircular ProgressBarStyle="ProgressBarStyle.Secondary" Visible="_working" Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" class="mt-1" />
+                                </div>
+                            </RadzenStack>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <footer>
+                <p>&copy; Copyright 2025, Joshua Shane Martin</p>
+            </footer>
+        </div>
+    </RadzenBody>
+</RadzenLayout>
+
+@code {
+    private int _subjectType = 1;
+
+    private string _emailAddress = string.Empty;
+
+    private string _userName = string.Empty;
+
+    private string _subjectName = string.Empty;
+
+    private string _captchaVerification = string.Empty;
+
+    private bool _working;
+    
+    private string _captcha = string.Empty;
+
+    private const int CaptchaLetters = 5;
+    
+    protected override Task OnInitializedAsync()
+    {
+        _captcha = Tools.GetCaptchaWord(CaptchaLetters);
+
+        return base.OnInitializedAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        await JsRuntime.InvokeVoidAsync("eval", """document.getElementById("textSubjectName").focus()""");
+        
+        StateHasChanged();
+    }
+    
+    private async Task Save()
+    {
+        _working = true;
+        StateHasChanged();
+        
+        // Determine if the user is a robot.
+        if (_captchaVerification.ToLowerInvariant() != _captcha.ToLowerInvariant())
+        {
+            _working = false;
+            StateHasChanged();
+        
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Duration = 5000,
+                Summary = "Oops, the characters are wrong. Please try again."
+            });
+            
+            return;
+        }
+
+        try
+        {
+            var tableClient = new TableClient(Configuration.GetConnectionString("ContributionsAzureStorage"),
+                "subjectContributions");
+        
+            await tableClient.CreateIfNotExistsAsync();
+
+            var guid = Guid.NewGuid().ToString();
+        
+            var tableEntity = new TableEntity(SubjectTypeForNumber(), guid)
+            {
+                { "emailAddress", _emailAddress },
+                { "userName", _userName },
+                { "subjectName", _subjectName },
+                { "subjectType", SubjectTypeForNumber() }
+            };
+        
+            await tableClient.AddEntityAsync(tableEntity);
+
+            // Reset the form.
+            _subjectName = string.Empty;
+            _captchaVerification = string.Empty;
+            
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Info,
+                Duration = 10000,
+                Summary = "Saved! We will review your contribution and publish if approved. Thank you."
+            });
+        }
+        catch (RequestFailedException)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Duration = 5000,
+                Summary = "Oops, could not save your contribution, please try again."
+            });
+        }
+        finally
+        {
+            _captcha = Tools.GetCaptchaWord(CaptchaLetters);
+            _working = false;
+            StateHasChanged();
+        }
+    }
+
+    private string SubjectTypeForNumber()
+    {
+        return _subjectType == 1 ? "Retailer" : "Brand";
+    }
+}
