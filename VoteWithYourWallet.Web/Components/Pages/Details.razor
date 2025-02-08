@@ -49,26 +49,26 @@
 
                             <div class="row">
                                 <div class="col-12 d-flex flex-wrap align-content-center">
-                                    <div class="d-flex align-content-center" style="margin-right: 1rem;">
+                                    <div class="d-flex align-content-center me-2 mb-2">
                                         <RadzenIcon Icon="@(Retailers.IconForScore(_subject.DiversityScore))" IconColor="@(Retailers.ColorForScore(_subject.DiversityScore))" />
                                         <span>DEI</span>
                                     </div>
-                                    <div class="d-flex align-content-center" style="margin-right: 1rem;">
+                                    <div class="d-flex align-content-center me-2 mb-2">
                                         <RadzenIcon Icon="@(Retailers.IconForScore(_subject.EnvironmentalScore))" IconColor="@(Retailers.ColorForScore(_subject.EnvironmentalScore))" />
                                         <span>Environment</span>
                                     </div>
-                                    <div class="d-flex align-content-center" style="margin-right: 1rem;">
+                                    <div class="d-flex align-content-center me-2 mb-2">
                                         <RadzenIcon Icon="@(Retailers.IconForScore(_subject.UnionScore))" IconColor="@(Retailers.ColorForScore(_subject.UnionScore))" />
                                         <span>Unions</span>
                                     </div>
-                                    <div class="d-flex align-content-center">
+                                    <div class="d-flex align-content-center me-2 mb-2">
                                         <RadzenIcon Icon="@(Retailers.IconForScore(_subject.LobbyingScore))" IconColor="@(Retailers.ColorForScore(_subject.LobbyingScore))" />
                                         <span>Politics</span>
                                     </div>
                                 </div>
                             </div>
                             
-                            <hr class="mt-4 mb-4" />
+                            <hr class="mt-3 mb-4" />
                             
                             <p>
                                 <a href="@($"Subjects/{ShortName}/Scores/Add")" class="btn btn-outline-dark d-flex d-inline-flex align-items-center">
@@ -76,6 +76,14 @@
                                     Suggest a Score
                                 </a>
                             </p>
+                            
+                            @if (_subject.LinkedSubject != null)
+                            {
+                                <div class="alert alert-secondary" role="alert">
+                                    <strong>Notice</strong>
+                                    @_subject.Name is a subsidiary or related brand of <a href="/Subjects/@_subject.LinkedSubject.ShortName">@_subject.LinkedSubject.Name</a>, so they will share the same scores.
+                                </div>
+                            }
                             
                             <h4>Diversity, Equity, and Inclusion</h4>
                             <ul class="list-unstyled mt-1">
@@ -283,6 +291,7 @@
             await using var context = await DbFactory.CreateDbContextAsync();
 
             _subject = await context.Subjects!
+                .Include(s => s.LinkedSubject)
                 .FirstOrDefaultAsync(s => s.ShortName == ShortName);
 
             if (_subject == null)
@@ -319,6 +328,39 @@
                 .Where(s => s.Topic == "Politics")
                 .Where(s => s.IsApproved)
                 .ToListAsync();
+
+            // Append the linked subject's scores because this
+            // is an affiliated brand or subsidiary.
+            if (_subject.LinkedSubject != null)
+            {
+                _diversityScores.AddRange(await context.Scores!
+                    .Include(s => s.CreatedByUser)
+                    .Where(s => s.SubjectId == _subject.LinkedSubjectId)
+                    .Where(s => s.Topic == "Diversity")
+                    .Where(s => s.IsApproved)
+                    .ToListAsync());
+                
+                _unionScores.AddRange(await context.Scores!
+                    .Include(s => s.CreatedByUser)
+                    .Where(s => s.SubjectId == _subject.LinkedSubjectId)
+                    .Where(s => s.Topic == "Unions")
+                    .Where(s => s.IsApproved)
+                    .ToListAsync());
+                
+                _environmentalScores.AddRange(await context.Scores!
+                    .Include(s => s.CreatedByUser)
+                    .Where(s => s.SubjectId == _subject.LinkedSubjectId)
+                    .Where(s => s.Topic == "Environment")
+                    .Where(s => s.IsApproved)
+                    .ToListAsync());
+                
+                _politicsScores.AddRange(await context.Scores!
+                    .Include(s => s.CreatedByUser)
+                    .Where(s => s.SubjectId == _subject.LinkedSubjectId)
+                    .Where(s => s.Topic == "Politics")
+                    .Where(s => s.IsApproved)
+                    .ToListAsync());
+            }
             
             StateHasChanged();
         }

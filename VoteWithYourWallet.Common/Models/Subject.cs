@@ -39,4 +39,13 @@ public class Subject
     /// Timestamp at which the object was created.
     /// </summary>
     public DateTime CreatedAt { get; set; }
+    
+    /// <summary>
+    /// ID of the subject to which this subject is
+    /// linked as a subsidiary or related brand.
+    /// </summary>
+    public int? LinkedSubjectId { get; set; }
+    
+    [ForeignKey("LinkedSubjectId")]
+    public virtual Subject? LinkedSubject { get; set; } = null;
 }

@@ -17,6 +17,8 @@
     <ItemGroup>
       <None Remove="Migrations\0001 Initial Migrations.sql" />
       <EmbeddedResource Include="Migrations\0001 Initial Migrations.sql" />
+      <None Remove="Migrations\0002 Adding Indexes and LinkedSubjectId.sql" />
+      <EmbeddedResource Include="Migrations\0002 Adding Indexes and LinkedSubjectId.sql" />
     </ItemGroup>
 
 </Project>

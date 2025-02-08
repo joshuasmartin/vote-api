@@ -24,7 +24,9 @@
         <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       </None>
       <Content Remove="appsettings.Development.json" />
-      <None Include="appsettings.Development.json" />
+      <None Include="appsettings.Development.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>

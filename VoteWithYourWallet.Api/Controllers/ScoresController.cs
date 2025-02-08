@@ -12,13 +12,37 @@ public class ScoresController(IConfiguration configuration, PrimaryContext conte
 {
     // GET: api/Subjects/1/Scores
     [HttpGet]
-    public IActionResult GetScores(int subjectId = 0)
+    public async Task<IActionResult> GetScores(int subjectId = 0)
     {
+        var subject = await context.Subjects!
+            .Select(s => new
+            {
+                s.Id,
+                s.LinkedSubjectId
+            })
+            .FirstOrDefaultAsync(s => s.Id == subjectId);
+
+        if (subject == null)
+        {
+            return NotFound();
+        }
+        
         var scores = context.Scores!
             .Include(s => s.CreatedByUser)
             .Where(s => s.SubjectId == subjectId)
             .Where(s => s.IsApproved)
             .ToList();
+
+        // Append the linked subject's scores because this
+        // is an affiliated brand or subsidiary.
+        if (subject.LinkedSubjectId != null)
+        {
+            scores.AddRange(await context.Scores!
+                .Include(s => s.CreatedByUser)
+                .Where(s => s.SubjectId == subject.LinkedSubjectId)
+                .Where(s => s.IsApproved)
+                .ToListAsync());
+        }
         
         return Ok(scores);
     }
