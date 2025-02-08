@@ -50,4 +50,10 @@ public class CacheService(IDbContextFactory<PrimaryContext> dbFactory) : ICacheS
 
         return _brands;
     }
+
+    public void BustCache()
+    {
+        _retailersCacheExpiration = DateTime.UtcNow.AddHours(-2);
+        _brandsCacheExpiration = DateTime.UtcNow.AddHours(-2);
+    }
 }

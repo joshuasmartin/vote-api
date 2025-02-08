@@ -76,13 +76,13 @@
                                     <RadzenTextBox @bind-Value="@_emailAddress" Disabled="_working" />
                                 </RadzenFormField>
 
-                                <hr />
+                                @*<hr />
                                 
                                 <Captcha @bind-CaptchaWord="@_captcha" CharNumber="@CaptchaLetters" Height="80" Width="260" />
 
                                 <RadzenFormField Text="Verify the Characters Above">
                                     <RadzenTextBox @bind-Value="@_captchaVerification" Disabled="_working" />
-                                </RadzenFormField>
+                                </RadzenFormField>*@
 
                                 <hr />
 
@@ -154,20 +154,20 @@
         StateHasChanged();
         
         // Determine if the user is a robot.
-        if (_captchaVerification.ToLowerInvariant() != _captcha.ToLowerInvariant())
-        {
-            _working = false;
-            StateHasChanged();
-        
-            NotificationService.Notify(new NotificationMessage
-            {
-                Severity = NotificationSeverity.Error,
-                Duration = 5000,
-                Summary = "Oops, the characters are wrong. Please try again."
-            });
-            
-            return;
-        }
+        // if (_captchaVerification.ToLowerInvariant() != _captcha.ToLowerInvariant())
+        // {
+        //     _working = false;
+        //     StateHasChanged();
+        //
+        //     NotificationService.Notify(new NotificationMessage
+        //     {
+        //         Severity = NotificationSeverity.Error,
+        //         Duration = 5000,
+        //         Summary = "Oops, the characters are wrong. Please try again."
+        //     });
+        //     
+        //     return;
+        // }
 
         try
         {
