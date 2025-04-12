@@ -12,7 +12,15 @@ builder.Configuration.AddCommandLine(args);
 builder.Services.AddOpenApi();
 
 builder.Services.AddDbContext<PrimaryContext>(options =>
-    options.UseSqlServer(builder.Configuration["ConnectionStrings:PrimaryContext"]));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("PrimaryContext"), npgsqlOptions =>
+        {
+            npgsqlOptions.CommandTimeout(60 * 5); // 5 minute timeout
+            npgsqlOptions.EnableRetryOnFailure();
+        })
+#if DEBUG
+        .EnableSensitiveDataLogging()
+#endif
+    );
 
 builder.Services.AddMemoryCache();
 

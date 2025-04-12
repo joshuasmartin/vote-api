@@ -1,8 +1,8 @@
-﻿﻿using DbUp;
+﻿using DbUp;
 using Microsoft.Extensions.Configuration;
 using System.Reflection;
 
-namespace VoteWithYourWallet.Database;
+namespace VoteWithYourWallet.Migrations;
 
 public class Program
 {
@@ -20,11 +20,9 @@ public class Program
             args.FirstOrDefault()
             : configuration.GetConnectionString("PrimaryContext"));
 
-        EnsureDatabase.For.SqlDatabase(connectionString);
-
         var upgradeEngine =
             DeployChanges.To
-                .SqlDatabase(connectionString)
+                .PostgresqlDatabase(connectionString)
                 .WithScriptsEmbeddedInAssembly(Assembly.GetAssembly(typeof(Program)))
                 .WithTransactionPerScript()
                 .LogToConsole()

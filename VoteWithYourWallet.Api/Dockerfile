@@ -1,0 +1,24 @@
+﻿FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+USER $APP_UID
+WORKDIR /app
+EXPOSE 8080
+EXPOSE 8081
+
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+ARG BUILD_CONFIGURATION=Release
+WORKDIR /src
+COPY ["VoteWithYourWallet.Api/VoteWithYourWallet.Api.csproj", "VoteWithYourWallet.Api/"]
+COPY ["VoteWithYourWallet.Common/VoteWithYourWallet.Common.csproj", "VoteWithYourWallet.Common/"]
+RUN dotnet restore "VoteWithYourWallet.Api/VoteWithYourWallet.Api.csproj"
+COPY . .
+WORKDIR "/src/VoteWithYourWallet.Api"
+RUN dotnet build "VoteWithYourWallet.Api.csproj" -c $BUILD_CONFIGURATION -o /app/build
+
+FROM build AS publish
+ARG BUILD_CONFIGURATION=Release
+RUN dotnet publish "VoteWithYourWallet.Api.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+
+FROM base AS final
+WORKDIR /app
+COPY --from=publish /app/publish .
+ENTRYPOINT ["dotnet", "VoteWithYourWallet.Api.dll"]

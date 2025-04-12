@@ -4,13 +4,14 @@
         <TargetFramework>net9.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     </PropertyGroup>
 
     <ItemGroup>
       <PackageReference Include="Azure.Data.Tables" Version="12.10.0" />
       <PackageReference Include="BlazorCaptcha" Version="1.7.1" />
       <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.1" />
-      <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.1" />
+      <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
       <PackageReference Include="Radzen.Blazor" Version="5.9.6" />
     </ItemGroup>
 
@@ -20,12 +21,15 @@
 
     <ItemGroup>
       <Content Remove="appsettings.json" />
+      <Content Include="..\.dockerignore">
+        <Link>.dockerignore</Link>
+      </Content>
       <None Include="appsettings.json">
         <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       </None>
       <Content Remove="appsettings.Development.json" />
       <None Include="appsettings.Development.json">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       </None>
     </ItemGroup>
 

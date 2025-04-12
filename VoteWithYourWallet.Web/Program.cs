@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 using Radzen;
 using VoteWithYourWallet.Web.Components;
 using VoteWithYourWallet.Web.Services;
@@ -20,14 +19,13 @@ public class Program
             .AddInteractiveServerComponents();
         
         builder.Services.AddDbContextFactory<PrimaryContext>(options =>
-                options
-                    .UseSqlServer(builder.Configuration.GetConnectionString("PrimaryContext")!, ssOptions =>
-                    {
-                        ssOptions.CommandTimeout(60 * 60); // 1 hour timeout
-                        ssOptions.EnableRetryOnFailure();
-                    })
+            options.UseNpgsql(builder.Configuration.GetConnectionString("PrimaryContext"), npgsqlOptions =>
+                {
+                    npgsqlOptions.CommandTimeout(60 * 5); // 5 minute timeout
+                    npgsqlOptions.EnableRetryOnFailure();
+                })
 #if DEBUG
-                    .EnableSensitiveDataLogging()
+                .EnableSensitiveDataLogging()
 #endif
         );
         

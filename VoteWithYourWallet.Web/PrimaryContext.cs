@@ -23,7 +23,7 @@ public class PrimaryContext : DbContext
 
     private static DbContextOptions GetOptions(string connectionString)
     {
-        return new DbContextOptionsBuilder().UseSqlServer(connectionString).Options;
+        return new DbContextOptionsBuilder().UseNpgsql(connectionString).Options;
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
